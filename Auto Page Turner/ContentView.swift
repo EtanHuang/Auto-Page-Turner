@@ -1,0 +1,24 @@
+//
+//  ContentView.swift
+//  Auto Page Turner
+//
+//  Created by Etan Huang on 2025-11-29.
+//
+
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        VStack {
+            Image(systemName: "globe")
+                .imageScale(.large)
+                .foregroundStyle(.tint)
+            Text("Hello, world!")
+        }
+        .padding()
+    }
+}
+
+#Preview {
+    ContentView()
+}
