@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "title": "Ballade No. 1",
+    "composer": "Frederic Chopin",
+    "opus": "Op. 23",
+    "edition": "G. Henle Verlag"
+  },
+  "structure": [
+    {
+      "start_beat": 0.0,
+      "end_beat": 28.0,
+      "start_bar": 1,
+      "beats_per_bar": 4
+    },
+    {
+      "start_beat": 28.0,
+      "end_beat": 1228.0,
+      "start_bar": 8,
+      "beats_per_bar": 6
+    },
+    {
+      "start_beat": 1228.0,
+      "end_beat": 1456.0,
+      "start_bar": 208,
+      "beats_per_bar": 4
+    }
+  ],
+  "page_turns": [
+    {
+      "page_number": 1,
+      "target_bar": 24,
+      "trigger_beat": 120.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 2,
+      "target_bar": 44,
+      "trigger_beat": 240.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 3,
+      "target_bar": 62,
+      "trigger_beat": 354.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 4,
+      "target_bar": 86,
+      "trigger_beat": 492.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 5,
+      "target_bar": 105,
+      "trigger_beat": 606.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 6,
+      "target_bar": 121,
+      "trigger_beat": 702.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 7,
+      "target_bar": 134,
+      "trigger_beat": 780.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 8,
+      "target_bar": 149,
+      "trigger_beat": 870.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 9,
+      "target_bar": 163,
+      "trigger_beat": 954.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 10,
+      "target_bar": 178,
+      "trigger_beat": 1044.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 11,
+      "target_bar": 193,
+      "trigger_beat": 1134.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 12,
+      "target_bar": 208,
+      "trigger_beat": 1224.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 13,
+      "target_bar": 227,
+      "trigger_beat": 1300.0,
+      "action": "turn"
+    },
+    {
+      "page_number": 14,
+      "target_bar": 246,
+      "trigger_beat": 1376.0,
+      "action": "turn"
+    }
+  ]
+}
