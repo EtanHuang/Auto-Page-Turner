@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "title": "Waterfall Etude",
+    "composer": "Frederic Chopin",
+    "opus": "Op. 10`",
+    "edition": "G. Henle Verlag"
+  },
+  "structure": [
+    {
+      "start_beat": 0.0,
+      "end_beat": 28.0,
+      "start_bar": 1,
+      "beats_per_bar": 4
+    }
+  ],
+  "page_turns": [
+    {
+      "page_number": 1,
+      "target_bar": 10,
+      "trigger_beat": 38,
+      "action": "turn"
+    },
+    {
+      "page_number": 2,
+      "target_bar": 20,
+      "trigger_beat": 78,
+      "action": "turn"
+    },
+    {
+      "page_number": 3,
+      "target_bar": 28,
+      "trigger_beat": 110,
+      "action": "turn"
+    },
+    {
+      "page_number": 4,
+      "target_bar": 38,
+      "trigger_beat": 150,
+      "action": "turn"
+    },
+    {
+      "page_number": 5,
+      "target_bar": 46,
+      "trigger_beat": 182,
+      "action": "turn"
+    },
+    {
+      "page_number": 6,
+      "target_bar": 56,
+      "trigger_beat": 222,
+      "action": "turn"
+    },
+    {
+      "page_number": 7,
+      "target_bar": 66,
+      "trigger_beat": 262,
+      "action": "turn"
+    },
+    {
+      "page_number": 8,
+      "target_bar": 74,
+      "trigger_beat": 294,
+      "action": "turn"
+    },
+  ]
+}

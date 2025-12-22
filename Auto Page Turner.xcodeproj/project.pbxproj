@@ -10,6 +10,19 @@
 		D6EAB64D2EDCEAE8008C9A0C /* AudioKit in Frameworks */ = {isa = PBXBuildFile; productRef = D6EAB64C2EDCEAE8008C9A0C /* AudioKit */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		D6D992252EF1093C00A78B9D /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		D6EAB6242EDC00CF008C9A0C /* Auto Page Turner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Auto Page Turner.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -60,6 +73,7 @@
 				D6EAB6202EDC00CF008C9A0C /* Sources */,
 				D6EAB6212EDC00CF008C9A0C /* Frameworks */,
 				D6EAB6222EDC00CF008C9A0C /* Resources */,
+				D6D992252EF1093C00A78B9D /* Embed ExtensionKit Extensions */,
 			);
 			buildRules = (
 			);

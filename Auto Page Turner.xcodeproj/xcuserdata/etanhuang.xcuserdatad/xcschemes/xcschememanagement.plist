@@ -14,9 +14,21 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>appicon.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>D6D9922D2EF1115400A78B9D</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>D6EAB6232EDC00CF008C9A0C</key>
 		<dict>
 			<key>primary</key>
