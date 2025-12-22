@@ -29,7 +29,7 @@ class PageTurnerViewModel: ObservableObject {
     var beatMap: [Int] = []
     var frameRate: Double = 0.0
     var liveAudioHistory: [[Double]] = []
-    let historySize = 10
+    let historySize = 8
 
     // MARK: - Audio Engine
     let engine = AudioEngine()
@@ -184,54 +184,53 @@ class PageTurnerViewModel: ObservableObject {
         return sqrt(sum)
     }
 
-    func dtwStep(liveChroma: [Double]) {
-        // 0. Safety Check: If map isn't loaded, don't do anything
-        guard !referenceFeatures.isEmpty else { return }
-        liveAudioHistory.append(liveChroma)
-        // Keep size fixed at 10
-        if liveAudioHistory.count > historySize {
-            liveAudioHistory.removeFirst()
-        }
-        if liveAudioHistory.count < historySize { return }
-        let isSilent = liveChroma.reduce(0, +) < 0.01
-        if isSilent {
-            return
-        }
-        // 1. Define the "Flashlight" (Search Window)
-        // We look a little bit behind (in case you dragged) and a bit ahead (in case you rushed)
-        let lookBack = 2
-        let lookAhead = 7
-        
-        let startFrame = max(0, currentFrameIndex - lookBack)
-        let endFrame = min(referenceFeatures.count, currentFrameIndex + lookAhead)
-        
-        // 2. The Hunt: Find the best match inside the window
-        var bestIndex = currentFrameIndex
-        var bestCost = Double.greatestFiniteMagnitude
-        let idealNext = currentFrameIndex + 1
-        
-//        if startFrame >= endFrame {
+//    func dtwStep(liveChroma: [Double]) {
+//        // 0. Safety Check: If map isn't loaded, don't do anything
+//        guard !referenceFeatures.isEmpty else { return }
+//        liveAudioHistory.append(liveChroma)
+//        // Keep size fixed at 10
+//        if liveAudioHistory.count > historySize {
+//            liveAudioHistory.removeFirst()
+//        }
+//        if liveAudioHistory.count < historySize { return }
+//        let isSilent = liveChroma.reduce(0, +) < 0.01
+//        if isSilent {
 //            return
 //        }
-
-        for i in startFrame..<endFrame {
-            let ref = referenceFeatures[i]
-            
-            // USE EUCLIDEAN DISTANCE
-            var dist = 0.0
-            for j in 0..<12 {
-                let d = liveChroma[j] - ref[j]
-                dist += d * d
-            }
-            dist = sqrt(dist)
-
-            
-            let frameDist = abs(i - idealNext)
-            let penalty = Double(frameDist) * 0.45
-
-            let cost = dist + penalty
+//        // 1. Define the "Flashlight" (Search Window)
+//        // We look a little bit behind (in case you dragged) and a bit ahead (in case you rushed)
+//        let lookBack = 2
+//        let lookAhead = 5
+//        let startFrame = max(0, currentFrameIndex - lookBack)
+//        let endFrame = min(referenceFeatures.count, currentFrameIndex + lookAhead)
+//        
+//        // 2. The Hunt: Find the best match inside the window
+//        var bestIndex = currentFrameIndex
+//        var bestCost = Double.greatestFiniteMagnitude
+//        let idealNext = currentFrameIndex + 1
+//        
+////        if startFrame >= endFrame {
+////            return
+////        }
+//
+//        for i in startFrame..<endFrame {
+//            let ref = referenceFeatures[i]
 //            
-            // USE MATRIX DISTANCE
+//            // USE EUCLIDEAN DISTANCE
+////            var dist = 0.0
+////            for j in 0..<12 {
+////                let d = liveChroma[j] - ref[j]
+////                dist += d * d
+////            }
+////            dist = sqrt(dist)
+////
+////            
+////            let frameDist = abs(i - idealNext)
+////            let penalty = Double(frameDist) * 0.45
+////
+////            let cost = dist + penalty
+////            
+//            // USE MATRIX DISTANCE
 //            let startRef = i - (historySize - 1)
 //            let endRef = i + 1 // Swift ranges are exclusive at the end
 //            
@@ -249,16 +248,100 @@ class PageTurnerViewModel: ObservableObject {
 //            let penalty = Double(frameDist) * 0.01 // Keep small for DTW
 //            
 //            let cost = rawDistance + penalty
+//
+//            if cost < bestCost {
+//                bestCost = cost
+//                bestIndex = i
+//            }
+//        }
+//        if bestCost > 5.0 { return }
+//        let diff = bestIndex - currentFrameIndex
+//        let clamped = max(-1, min(2, diff))   // allow slight back step, small forward jump
+//
+//        currentFrameIndex += clamped
+//
+//        if currentFrameIndex < measureMap.count {
+//            currentMeasure = measureMap[currentFrameIndex]
+//        }
+//        if currentFrameIndex < beatMap.count {
+//            currentBeat = beatMap[currentFrameIndex]
+//        }
+//    }
+    
+    func dtwStep(liveChroma: [Double]) {
+        guard !referenceFeatures.isEmpty else { return }
+        
+        // --- 1. Update History ---
+        liveAudioHistory.append(liveChroma)
+        if liveAudioHistory.count > historySize {
+            liveAudioHistory.removeFirst()
+        }
+        // We can't match until we have a full buffer of live audio
+        if liveAudioHistory.count < historySize { return }
+        
+        // Optimization: Silence check
+        let isSilent = liveChroma.reduce(0, +) < 0.01
+        if isSilent { return }
+
+        // --- 2. Define Window ---
+        let lookBack = 1
+        let lookAhead = 7
+        
+        // CRITICAL FIX:
+        // The reference candidate 'i' must be at least (historySize - 1).
+        // Example: If history is 8, the first valid match is at index 7 (covering 0-7).
+        let minValidIndex = historySize - 1
+        
+        let startFrame = max(minValidIndex, currentFrameIndex - lookBack)
+        
+        // FIX HERE:
+        // We calculate the standard window end...
+        var calculatedEnd = currentFrameIndex + lookAhead
+        // ...but we FORCE it to be large enough to see the first valid chunk.
+        // If we are at index 0, we need to see at least index 7.
+        // Adding a small buffer (+2) ensures the loop actually runs.
+        calculatedEnd = max(calculatedEnd, minValidIndex + 2)
+        
+        let endFrame = min(referenceFeatures.count, calculatedEnd)
+        
+        // If the window is invalid (shouldn't happen with the fix above), abort.
+        if startFrame >= endFrame { return }
+
+        var bestIndex = currentFrameIndex
+        var bestCost = Double.greatestFiniteMagnitude
+        let idealNext = currentFrameIndex + 1
+
+        for i in startFrame..<endFrame {
+            // ... (Rest of your loop remains the same) ...
+            let startRef = i - (historySize - 1)
+            let endRef = i + 1
+            
+            let refSequenceSlice = referenceFeatures[startRef..<endRef]
+            let refSequence = Array(refSequenceSlice)
+            
+            let rawDistance = matrixCost(sequenceA: liveAudioHistory, sequenceB: refSequence)
+            let jumpDistance = i - idealNext
+            let directionMultiplier = jumpDistance >= 0 ? 0.005 : 0.05
+            let penalty = Double(abs(jumpDistance)) * directionMultiplier
+            
+            let cost = rawDistance + penalty
 
             if cost < bestCost {
                 bestCost = cost
                 bestIndex = i
             }
         }
-        if bestCost > 5.0 { return }
+        
+        // --- Threshold Tuning ---
+        // Since you are summing 8 frames, a cost of 5.0 might still be too tight.
+        // If it still doesn't move, try increasing this to 8.0 or 10.0.
+        if bestCost > 10.0 { return }
+        
         let diff = bestIndex - currentFrameIndex
-        let clamped = max(-1, min(2, diff))   // allow slight back step, small forward jump
-
+        // Allow a larger forward jump at the start because we go from 0 -> 7 instantly
+        let maxJump = (currentFrameIndex == 0) ? historySize : 2
+        let clamped = max(-1, min(maxJump, diff))
+        
         currentFrameIndex += clamped
 
         if currentFrameIndex < measureMap.count {
