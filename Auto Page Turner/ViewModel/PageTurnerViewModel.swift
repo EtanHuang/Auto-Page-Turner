@@ -138,7 +138,9 @@ class PageTurnerViewModel: ObservableObject {
             return
         }
         mic = input
-        
+        let hardwareFormat = engine.avEngine.inputNode.inputFormat(forBus: 0)
+        print("🎤 Microphone Sample Rate: \(hardwareFormat.sampleRate) Hz")
+        print("🎛️ Microphone Channels: \(hardwareFormat.channelCount)")
         if silentMixer == nil {
             let newMixer = Mixer(input)
             newMixer.volume = 0.0
@@ -148,8 +150,7 @@ class PageTurnerViewModel: ObservableObject {
         }
         
         // 1. Install the Tap on the microphone input
-        // "bufferSize: 2048" means it grabs 2048 frequency bins at a time
-        fftTap = FFTTap(input, bufferSize: 2048) { fftData in
+        fftTap = FFTTap(input, bufferSize: 8192) { fftData in
             
             // This block runs 60+ times a second!
             // We must hop back to the main thread to update UI
@@ -409,11 +410,10 @@ class PageTurnerViewModel: ObservableObject {
 
     func calculateChroma(fftData: [Float]) -> [Double] {
         if fftData.isEmpty { return Array(repeating: 0.0, count: 12) }
-
-        // Use a slightly larger slice to capture low harmonics
+        let sampleRate = self.engine.avEngine.inputNode.inputFormat(forBus: 0).sampleRate
+        //engine.avEngine.inputNode.inputFormat(forBus: 0)
         let fft = fftData
         let n = fft.count
-        let sampleRate = 44100.0
         let binHz = sampleRate / Double(n * 2)
 
         // 1. RMS/Noise Gate
@@ -423,7 +423,7 @@ class PageTurnerViewModel: ObservableObject {
         var chroma = [Double](repeating: 0.0, count: 12)
 
         // 2. Process every bin with sub-bin accuracy
-        for i in 4..<(fft.count-1) {
+        for i in 1..<(n-1) {
             let mag = Double(fft[i])
             
             // Parabolic Interpolation: Finding the true frequency peak between bins
@@ -443,14 +443,15 @@ class PageTurnerViewModel: ObservableObject {
 
             // 3. Frequency to MIDI conversion
             let midi = 69.0 + 12.0 * log2(freq / 440.0)
-            
-            // 4. Weighting Logic (Arzt's MIDI-informed approach)
-            // For low frequencies, we trust the energy more if it aligns with harmonics
-            let note = Int(round(midi)) + 1
+            let note = Int(round(midi))
             let pc = (note % 12 + 12) % 12
             
-            // Apply weight: lower notes get a boost to their fundamental to overcome bin smearing
-            let weight = freq < 150 ? 1.5 : 1.0
+            var weight = 1.0
+            if freq < 100 {
+                weight = 0.8
+            } else if freq >= 100 && freq < 260 {
+                weight = 1.2
+            }
             chroma[pc] += mag * weight
         }
         // 5. Normalization
@@ -461,7 +462,7 @@ class PageTurnerViewModel: ObservableObject {
         // Arzt-inspired Temporal Smoothing (Alpha blending)
         // 0.7 means we keep 70% of the old data and only let 30% of new data through
         let smoothed = zip(previousChroma, normalized).map { (prev, current) in
-            return (prev * 0.7) + (current * 0.3)
+            return (prev * 0.6) + (current * 0.4)
         }
         self.previousChroma = smoothed
         return smoothed
