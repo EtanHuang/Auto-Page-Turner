@@ -1,0 +1,49 @@
+
+{
+  "meta": {
+    "title": "Clair de Lune",
+    "composer": "Claude Debussy",
+    "opus": "Suite Bergamasque, L. 75",
+    "edition": "Generic"
+  },
+  "structure": [
+    {
+      "start_beat": 0.0,
+      "end_beat": 216.0,
+      "start_bar": 1,
+      "beats_per_bar": 3
+    }
+  ],
+  "page_turns": [
+    {
+      "page_number": 2,
+      "target_bar": 15,
+      "trigger_beat": 42,
+      "action": "turn"
+    },
+    {
+      "page_number": 3,
+      "target_bar": 29,
+      "trigger_beat": 84,
+      "action": "turn"
+    },
+    {
+      "page_number": 4,
+      "target_bar": 39,
+      "trigger_beat": 114,
+      "action": "turn"
+    },
+    {
+      "page_number": 5,
+      "target_bar": 49,
+      "trigger_beat": 144,
+      "action": "turn"
+    },
+    {
+      "page_number": 6,
+      "target_bar": 59,
+      "trigger_beat": 174,
+      "action": "turn"
+    }
+  ]
+}

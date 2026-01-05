@@ -96,7 +96,7 @@ class PageTurnerViewModel: ObservableObject {
     
     // 1. THE BRAIN: Load the JSON "buckets"
     func loadJSON() {
-        guard let url = Bundle.main.url(forResource: "waterfall_features_full", withExtension: "json") else {
+        guard let url = Bundle.main.url(forResource: "clairdelune_features_full", withExtension: "json") else {
             statusMessage = "❌ JSON file not found in Xcode!"
             return
         }
@@ -287,10 +287,6 @@ class PageTurnerViewModel: ObservableObject {
         // --- 2. Define Window ---
         let lookBack = 1
         let lookAhead = 7
-        
-        // CRITICAL FIX:
-        // The reference candidate 'i' must be at least (historySize - 1).
-        // Example: If history is 8, the first valid match is at index 7 (covering 0-7).
         let minValidIndex = historySize - 1
         
         let startFrame = max(minValidIndex, currentFrameIndex - lookBack)
@@ -313,30 +309,37 @@ class PageTurnerViewModel: ObservableObject {
         let idealNext = currentFrameIndex + 1
 
         for i in startFrame..<endFrame {
-            // ... (Rest of your loop remains the same) ...
-            let startRef = i - (historySize - 1)
-            let endRef = i + 1
-            
-            let refSequenceSlice = referenceFeatures[startRef..<endRef]
-            let refSequence = Array(refSequenceSlice)
-            
-            let rawDistance = matrixCost(sequenceA: liveAudioHistory, sequenceB: refSequence)
-            let jumpDistance = i - idealNext
-            let directionMultiplier = jumpDistance >= 0 ? 0.005 : 0.05
-            let penalty = Double(abs(jumpDistance)) * directionMultiplier
-            
-            let cost = rawDistance + penalty
+                let startRef = i - (historySize - 1)
+                let endRef = i + 1
+                
+                let refSequenceSlice = referenceFeatures[startRef..<endRef]
+                let refSequence = Array(refSequenceSlice)
+                
+                let rawDistance = matrixCost(sequenceA: liveAudioHistory, sequenceB: refSequence)
+                
+                // We punish jumping ahead much harder now.
+                // This prevents "seeking" when you play random notes that happen to match
+                // a chord 5 frames away.
+                let jumpDistance = i - idealNext
+                let forwardPenalty = 0.2
+                let backwardPenalty = 0.5
+                
+                let directionMultiplier = jumpDistance >= 0 ? forwardPenalty : backwardPenalty
+                let penalty = Double(abs(jumpDistance)) * directionMultiplier
+                
+                let cost = rawDistance + penalty
 
-            if cost < bestCost {
-                bestCost = cost
-                bestIndex = i
+                if cost < bestCost {
+                    bestCost = cost
+                    bestIndex = i
+                }
             }
-        }
         
         // --- Threshold Tuning ---
         // Since you are summing 8 frames, a cost of 5.0 might still be too tight.
         // If it still doesn't move, try increasing this to 8.0 or 10.0.
-        if bestCost > 10.0 { return }
+        print("\(String(format: "%.2f", bestCost))")
+        if bestCost > 7.0{ return }
         
         let diff = bestIndex - currentFrameIndex
         // Allow a larger forward jump at the start because we go from 0 -> 7 instantly
@@ -456,13 +459,14 @@ class PageTurnerViewModel: ObservableObject {
         }
         // 5. Normalization
         let maxVal = chroma.max() ?? 0
-        if maxVal < 0.001 { return Array(repeating: 0.0, count: 12) }
+        print("Max Chroma Level: \(maxVal)")
+        if maxVal < 1.2 { return Array(repeating: 0.0, count: 12) }
         let normalized = chroma.map { $0 / maxVal }
-
+        
         // Arzt-inspired Temporal Smoothing (Alpha blending)
-        // 0.7 means we keep 70% of the old data and only let 30% of new data through
-        let smoothed = zip(previousChroma, normalized).map { (prev, current) in
-            return (prev * 0.6) + (current * 0.4)
+        let sharpened = normalized.map { $0 * $0 }
+        let smoothed = zip(previousChroma, sharpened).map { (prev, current) in
+            return (prev * 0.2) + (current * 0.8)
         }
         self.previousChroma = smoothed
         return smoothed
