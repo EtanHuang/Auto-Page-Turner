@@ -7,7 +7,7 @@ struct ContentView: View {
         // ScrollView is the parent container
         ScrollView(.vertical, showsIndicators: true) {
             VStack(spacing: 25) {
-                headerSection
+                pdfSection
                 statusCard
                 chromaVisualizer
                 controlsSection
@@ -35,8 +35,55 @@ struct ContentView: View {
         }
     }
     
+    @ViewBuilder
+    var pdfSection: some View {
+        if let url = Bundle.main.url(forResource: "clairdelune", withExtension: "pdf") {
+            ZStack {
+                // 1. The bottom layer: The PDF itself
+                PDFKitView(url: url, currentPage: viewModel.currentPage)
+                    .frame(height: 450) // Adjust height to your liking
+                    .background(Color.white)
+                    .cornerRadius(15)
+                    .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                    .overlay(
+                        HStack {
+                            // Left Tap Zone
+                            Color.clear
+                                .frame(width: 80)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    if viewModel.currentPage > 1 { viewModel.currentPage -= 1 }
+                                }
+                            
+                            Spacer() // This allows the middle part to be "clickable/zoomable"
+                            
+                            // Right Tap Zone
+                            Color.clear
+                                .frame(width: 80)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    if viewModel.currentPage < viewModel.totalPages { viewModel.currentPage += 1 }
+                                }
+                        }
+                    )
+                    .onAppear {
+                        viewModel.loadPDFMetadata(url: url)
+                    }
+            }
+        } else {
+            Text("PDF not found")
+                .font(.caption)
+                .foregroundColor(.red)
+        }
+    }
+    
     var statusCard: some View {
         HStack(spacing: 40) {
+            VStack {
+                Text("PAGE").font(.caption).monospaced().foregroundColor(.gray)
+                Text("\(viewModel.currentPage)")
+                    .font(.system(size: 45, weight: .bold, design: .rounded))
+            }
             VStack {
                 Text("MEASURE").font(.caption).monospaced().foregroundColor(.gray)
                 Text("\(viewModel.currentMeasure)")
@@ -81,6 +128,7 @@ struct ContentView: View {
         .padding()
         .background(Color.gray.opacity(0.1))
         .cornerRadius(12)
+        
     }
     
     var controlsSection: some View {

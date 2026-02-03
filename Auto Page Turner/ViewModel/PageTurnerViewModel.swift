@@ -2,6 +2,7 @@ import Foundation
 import AudioKit // Make sure this is imported!
 import AVFoundation
 import Combine
+import PDFKit
 
 struct AudioFeaturesContainer: Codable {
     let frame_rate: Double
@@ -20,7 +21,8 @@ class PageTurnerViewModel: ObservableObject {
     @Published var currentChroma: [Double] = Array(repeating: 0.0, count: 12)
     @Published var currentMeasure: Int = 0
     @Published var currentBeat: Int = 0
-
+    @Published var currentPage: Int = 1
+    @Published var totalPages: Int = 0
     // MARK: - Internal Data
     // This will hold the massive list of features you generated in Python
     var previousChroma: [Double] = Array(repeating: 0.0, count: 12)
@@ -36,10 +38,17 @@ class PageTurnerViewModel: ObservableObject {
     var mic: AudioEngine.InputNode?
     var fftTap: FFTTap?
     var silentMixer: Mixer?
-
+    private let pageBreaks = [1, 15, 29, 39, 49, 59]
     init() {
         // Automatically try to load the file when the app starts
         loadJSON()
+    }
+    
+    func loadPDFMetadata(url: URL) {
+        if let document = PDFDocument(url: url) {
+            self.totalPages = document.pageCount
+        }
+        print("Successfully loaded PDF with \(totalPages) pages")
     }
     
     func cosineDistance(_ a: [Double], _ b: [Double]) -> Double {
@@ -131,6 +140,13 @@ class PageTurnerViewModel: ObservableObject {
             }
         }
     }
+    
+    func updatePage() {
+            // Finds the last index in pageBreaks that is less than or equal to currentMeasure
+            if let pageIndex = pageBreaks.lastIndex(where: { $0 <= currentMeasure }) {
+                self.currentPage = pageIndex + 1
+            }
+        }
     
     private func setupAudioEngine() {
         guard let input = engine.input else {
@@ -353,6 +369,10 @@ class PageTurnerViewModel: ObservableObject {
         }
         if currentFrameIndex < beatMap.count {
             currentBeat = beatMap[currentFrameIndex]
+        }
+        if currentFrameIndex < measureMap.count {
+            currentMeasure = measureMap[currentFrameIndex]
+            updatePage()
         }
     }
     
