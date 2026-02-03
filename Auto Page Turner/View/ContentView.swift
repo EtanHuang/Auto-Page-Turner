@@ -5,17 +5,16 @@ struct ContentView: View {
     
     var body: some View {
         // ScrollView is the parent container
-        ScrollView(.vertical, showsIndicators: true) {
-            VStack(spacing: 25) {
-                pdfSection
-                statusCard
-                chromaVisualizer
-                controlsSection
-                progressSection
-                //measureList
-            }
-            .padding()
-        }
+        pdfSection
+//        ScrollView(.vertical, showsIndicators: true) {
+//            VStack(spacing: 25) {
+//                chromaVisualizer
+//                controlsSection
+//                progressSection
+//                //measureList
+//            }
+//            .padding()
+//        }
         .background(Color(.systemGroupedBackground))
     }
     
@@ -38,18 +37,19 @@ struct ContentView: View {
     @ViewBuilder
     var pdfSection: some View {
         if let url = Bundle.main.url(forResource: "clairdelune", withExtension: "pdf") {
-            ZStack {
+            ZStack(alignment: .topLeading) {
                 // 1. The bottom layer: The PDF itself
                 PDFKitView(url: url, currentPage: viewModel.currentPage)
-                    .frame(height: 450) // Adjust height to your liking
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.white)
                     .cornerRadius(15)
                     .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                    .ignoresSafeArea()
                     .overlay(
                         HStack {
                             // Left Tap Zone
                             Color.clear
-                                .frame(width: 80)
+                                .frame(width: 160)
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     if viewModel.currentPage > 1 { viewModel.currentPage -= 1 }
@@ -59,7 +59,7 @@ struct ContentView: View {
                             
                             // Right Tap Zone
                             Color.clear
-                                .frame(width: 80)
+                                .frame(width: 160)
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     if viewModel.currentPage < viewModel.totalPages { viewModel.currentPage += 1 }
@@ -69,6 +69,58 @@ struct ContentView: View {
                     .onAppear {
                         viewModel.loadPDFMetadata(url: url)
                     }
+                VStack {
+                    HStack(spacing: 6) {
+                        Image(systemName: "metronome") // Optional icon
+                            .font(.system(size: 12))
+                        Text("\(viewModel.currentMeasure):\(viewModel.currentBeat)")
+                            .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.4)) // Semi-transparent grey/black
+                    .foregroundColor(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.top, 60)
+                    .padding(.leading, 20)
+                    .shadow(color: .black.opacity(0.3), radius: 5)
+                    HStack(spacing: 6) {
+                        Text("PAGE \(viewModel.currentPage)")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.4)) // Semi-transparent grey/black
+                    .foregroundColor(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.leading, 20)
+                    .shadow(color: .black.opacity(0.3), radius: 5)
+                }
+                VStack {
+                    Spacer() // Pushes button to bottom
+                    HStack {
+                        Button(action: {
+                            if viewModel.isListening { viewModel.stopListening() }
+                            else { viewModel.startListening() }
+                        }) {
+                            HStack {
+                                Image(systemName: viewModel.isListening ? "mic.fill" : "mic.badge.plus")
+                                Text(viewModel.isListening ? "Stop Listening" : "Start Listening")
+                            }
+                            .font(.system(size: 14, weight: .bold))
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(viewModel.isListening ? Color.red : Color.blue)
+                            .foregroundColor(.white)
+                            .clipShape(Capsule())
+                        }
+                        .shadow(radius: 5)
+                        .padding(.leading, 20)
+                        .padding(.bottom, 40) // Clearance for iPad home bar
+                        
+                        Spacer() // Pushes button to left
+                    }
+                }
             }
         } else {
             Text("PDF not found")
@@ -77,30 +129,30 @@ struct ContentView: View {
         }
     }
     
-    var statusCard: some View {
-        HStack(spacing: 40) {
-            VStack {
-                Text("PAGE").font(.caption).monospaced().foregroundColor(.gray)
-                Text("\(viewModel.currentPage)")
-                    .font(.system(size: 45, weight: .bold, design: .rounded))
-            }
-            VStack {
-                Text("MEASURE").font(.caption).monospaced().foregroundColor(.gray)
-                Text("\(viewModel.currentMeasure)")
-                    .font(.system(size: 45, weight: .bold, design: .rounded))
-            }
-            VStack {
-                Text("BEAT").font(.caption).monospaced().foregroundColor(.gray)
-                Text("\(viewModel.currentBeat)")
-                    .font(.system(size: 45, weight: .bold, design: .rounded))
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(Color(UIColor.secondarySystemBackground))
-        .cornerRadius(15)
-    }
-    
+//    var statusCard: some View {
+//        HStack(spacing: 40) {
+//            VStack {
+//                Text("PAGE").font(.caption).monospaced().foregroundColor(.gray)
+//                Text("\(viewModel.currentPage)")
+//                    .font(.system(size: 45, weight: .bold, design: .rounded))
+//            }
+//            VStack {
+//                Text("MEASURE").font(.caption).monospaced().foregroundColor(.gray)
+//                Text("\(viewModel.currentMeasure)")
+//                    .font(.system(size: 45, weight: .bold, design: .rounded))
+//            }
+//            VStack {
+//                Text("BEAT").font(.caption).monospaced().foregroundColor(.gray)
+//                Text("\(viewModel.currentBeat)")
+//                    .font(.system(size: 45, weight: .bold, design: .rounded))
+//            }
+//        }
+//        .padding()
+//        .frame(maxWidth: .infinity)
+//        .background(Color(UIColor.secondarySystemBackground))
+//        .cornerRadius(15)
+//    }
+//    
     var chromaVisualizer: some View {
         VStack(alignment: .leading) {
             Text("Real-time Pitch Detection")
