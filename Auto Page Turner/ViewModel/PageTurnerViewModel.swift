@@ -38,7 +38,7 @@ class PageTurnerViewModel: ObservableObject {
     var mic: AudioEngine.InputNode?
     var fftTap: FFTTap?
     var silentMixer: Mixer?
-    private let pageBreaks = [1, 15, 29, 39, 49, 59]
+    private let pageBreaks = [1, 22]
     init() {
         // Automatically try to load the file when the app starts
         loadJSON()
@@ -105,7 +105,7 @@ class PageTurnerViewModel: ObservableObject {
     
     // 1. THE BRAIN: Load the JSON "buckets"
     func loadJSON() {
-        guard let url = Bundle.main.url(forResource: "clairdelune_features_full", withExtension: "json") else {
+        guard let url = Bundle.main.url(forResource: "canon in d_features_full", withExtension: "json") else {
             statusMessage = "❌ JSON file not found in Xcode!"
             return
         }
@@ -302,64 +302,62 @@ class PageTurnerViewModel: ObservableObject {
 
         // --- 2. Define Window ---
         let lookBack = 1
-        let lookAhead = 7
+        let lookAhead = 21
         let minValidIndex = historySize - 1
         
         let startFrame = max(minValidIndex, currentFrameIndex - lookBack)
-        
-        // FIX HERE:
-        // We calculate the standard window end...
         var calculatedEnd = currentFrameIndex + lookAhead
-        // ...but we FORCE it to be large enough to see the first valid chunk.
-        // If we are at index 0, we need to see at least index 7.
-        // Adding a small buffer (+2) ensures the loop actually runs.
         calculatedEnd = max(calculatedEnd, minValidIndex + 2)
-        
         let endFrame = min(referenceFeatures.count, calculatedEnd)
         
-        // If the window is invalid (shouldn't happen with the fix above), abort.
         if startFrame >= endFrame { return }
 
         var bestIndex = currentFrameIndex
         var bestCost = Double.greatestFiniteMagnitude
-        let idealNext = currentFrameIndex + 1
+        
+        let matchThreshold = 4.5
+        
 
-        for i in startFrame..<endFrame {
-                let startRef = i - (historySize - 1)
-                let endRef = i + 1
-                
-                let refSequenceSlice = referenceFeatures[startRef..<endRef]
-                let refSequence = Array(refSequenceSlice)
-                
-                let rawDistance = matrixCost(sequenceA: liveAudioHistory, sequenceB: refSequence)
-                
-                // We punish jumping ahead much harder now.
-                // This prevents "seeking" when you play random notes that happen to match
-                // a chord 5 frames away.
-                let jumpDistance = i - idealNext
-                let forwardPenalty = 0.2
-                let backwardPenalty = 0.5
-                
-                let directionMultiplier = jumpDistance >= 0 ? forwardPenalty : backwardPenalty
-                let penalty = Double(abs(jumpDistance)) * directionMultiplier
-                
-                let cost = rawDistance + penalty
+        // Iterate BACKWARDS from the furthest future frame
+        for i in (startFrame..<endFrame).reversed() {
+            let startRef = i - (historySize - 1)
+            let endRef = i + 1
+            
+            let refSequenceSlice = referenceFeatures[startRef..<endRef]
+            let refSequence = Array(refSequenceSlice)
+            
+            let rawDistance = matrixCost(sequenceA: liveAudioHistory, sequenceB: refSequence)
+            
+            // Still apply a small penalty for big jumps so we don't pick garbage
+            // But keep it small so valid jumps are possible.
+            let jumpDistance = i - (currentFrameIndex + 1)
+            let penalty = Double(abs(jumpDistance)) * 0.05
+            let cost = rawDistance + penalty
 
-                if cost < bestCost {
-                    bestCost = cost
-                    bestIndex = i
-                }
+            // STRATEGY A: The "Good Enough" Check
+            // If this future frame is a solid match, take it and STOP.
+            // This guarantees we pick the furthest valid point.
+            if cost < matchThreshold {
+                bestIndex = i
+                bestCost = cost
+                break
             }
+            
+            // STRATEGY B: The Fallback
+            // If we haven't found a "good enough" match yet, keep track of the absolute best
+            // just in case we need to fall back to standard DTW.
+            if cost < bestCost {
+                bestCost = cost
+                bestIndex = i
+            }
+        }
         
         // --- Threshold Tuning ---
-        // Since you are summing 8 frames, a cost of 5.0 might still be too tight.
-        // If it still doesn't move, try increasing this to 8.0 or 10.0.
         print("\(String(format: "%.2f", bestCost))")
-        if bestCost > 7.0{ return }
+        if bestCost > 8.0{ return }
         
         let diff = bestIndex - currentFrameIndex
-        // Allow a larger forward jump at the start because we go from 0 -> 7 instantly
-        let maxJump = (currentFrameIndex == 0) ? historySize : 2
+        let maxJump = (currentFrameIndex == 0) ? historySize : 5
         let clamped = max(-1, min(maxJump, diff))
         
         currentFrameIndex += clamped
@@ -384,7 +382,7 @@ class PageTurnerViewModel: ObservableObject {
         
         // 2. Get the loudest REMAINING frequency
         let maxVal = meaningfulData.max() ?? 0.0
-        let rawNoiseFloor: Float = 0.03
+        let rawNoiseFloor: Float = 0.06
         if maxVal < rawNoiseFloor {
             DispatchQueue.main.async {
                 // Fade out visuals quickly

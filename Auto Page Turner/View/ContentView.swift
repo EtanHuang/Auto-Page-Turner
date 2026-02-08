@@ -6,15 +6,15 @@ struct ContentView: View {
     var body: some View {
         // ScrollView is the parent container
         pdfSection
-//        ScrollView(.vertical, showsIndicators: true) {
-//            VStack(spacing: 25) {
-//                chromaVisualizer
-//                controlsSection
-//                progressSection
-//                //measureList
-//            }
-//            .padding()
-//        }
+        ScrollView(.vertical, showsIndicators: true) {
+            VStack(spacing: 25) {
+                chromaVisualizer
+                controlsSection
+                progressSection
+                //measureList
+            }
+            .padding()
+        }
         .background(Color(.systemGroupedBackground))
     }
     
@@ -36,7 +36,7 @@ struct ContentView: View {
     
     @ViewBuilder
     var pdfSection: some View {
-        if let url = Bundle.main.url(forResource: "clairdelune", withExtension: "pdf") {
+        if let url = Bundle.main.url(forResource: "canon in d", withExtension: "pdf") {
             ZStack(alignment: .topLeading) {
                 // 1. The bottom layer: The PDF itself
                 PDFKitView(url: url, currentPage: viewModel.currentPage)
