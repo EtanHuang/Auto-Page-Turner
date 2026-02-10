@@ -31,14 +31,21 @@ class PageTurnerViewModel: ObservableObject {
     var beatMap: [Int] = []
     var frameRate: Double = 0.0
     var liveAudioHistory: [[Double]] = []
-    let historySize = 8
+    let historySize = 7
 
     // MARK: - Audio Engine
     let engine = AudioEngine()
     var mic: AudioEngine.InputNode?
     var fftTap: FFTTap?
     var silentMixer: Mixer?
-    private let pageBreaks = [1, 22]
+    //waterfall
+    private let pageBreaks = [1, 10, 20, 28, 38, 46, 56, 66, 74]
+    //la campanella 
+    //private let pageBreaks = [1, 14, 26, 40]
+    // ballade 1
+    //private let pageBreaks = [1, 21, 41, 55, 73, 90, 109, 125, 140, 155, 172, 205, 224, 244]
+    // clair de lune
+    //private let pageBreaks = [1,14,28,38,48,58]
     init() {
         // Automatically try to load the file when the app starts
         loadJSON()
@@ -105,7 +112,7 @@ class PageTurnerViewModel: ObservableObject {
     
     // 1. THE BRAIN: Load the JSON "buckets"
     func loadJSON() {
-        guard let url = Bundle.main.url(forResource: "canon in d_features_full", withExtension: "json") else {
+        guard let url = Bundle.main.url(forResource: "waterfall_features_full", withExtension: "json") else {
             statusMessage = "❌ JSON file not found in Xcode!"
             return
         }
@@ -301,8 +308,8 @@ class PageTurnerViewModel: ObservableObject {
         if isSilent { return }
 
         // --- 2. Define Window ---
-        let lookBack = 1
-        let lookAhead = 21
+        let lookBack = 0
+        let lookAhead = 10
         let minValidIndex = historySize - 1
         
         let startFrame = max(minValidIndex, currentFrameIndex - lookBack)

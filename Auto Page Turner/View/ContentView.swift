@@ -36,7 +36,7 @@ struct ContentView: View {
     
     @ViewBuilder
     var pdfSection: some View {
-        if let url = Bundle.main.url(forResource: "canon in d", withExtension: "pdf") {
+        if let url = Bundle.main.url(forResource: "waterfall", withExtension: "pdf") {
             ZStack(alignment: .topLeading) {
                 // 1. The bottom layer: The PDF itself
                 PDFKitView(url: url, currentPage: viewModel.currentPage)
