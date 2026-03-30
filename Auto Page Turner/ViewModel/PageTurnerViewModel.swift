@@ -1,5 +1,5 @@
 import Foundation
-import AudioKit // Make sure this is imported!
+import AudioKit
 import AVFoundation
 import Combine
 import PDFKit
@@ -32,23 +32,33 @@ class PageTurnerViewModel: ObservableObject {
     var frameRate: Double = 0.0
     var liveAudioHistory: [[Double]] = []
     let historySize = 7
-
+    var pageBreaks: [Int] = []
     // MARK: - Audio Engine
     let engine = AudioEngine()
     var mic: AudioEngine.InputNode?
     var fftTap: FFTTap?
     var silentMixer: Mixer?
-    //waterfall
-    private let pageBreaks = [1, 10, 20, 28, 38, 46, 56, 66, 74]
-    //la campanella 
-    //private let pageBreaks = [1, 14, 26, 40]
-    // ballade 1
-    //private let pageBreaks = [1, 21, 41, 55, 73, 90, 109, 125, 140, 155, 172, 205, 224, 244]
-    // clair de lune
-    //private let pageBreaks = [1,14,28,38,48,58]
-    init() {
-        // Automatically try to load the file when the app starts
-        loadJSON()
+    
+    func loadJSON(fileName: String) {
+        // Now it uses the dynamic fileName instead of "waterfall_features_full"
+        print(fileName)
+        guard let url = Bundle.main.url(forResource: fileName, withExtension: "json") else {
+            statusMessage = "❌ JSON file \(fileName) not found in Xcode!"
+            return
+        }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let container = try JSONDecoder().decode(AudioFeaturesContainer.self, from: data)
+            self.referenceFeatures = container.features
+            self.measureMap = container.measure_map
+            self.beatMap = container.beat_map
+            self.frameRate = container.frame_rate
+            statusMessage = "✅ Loaded \(referenceFeatures.count) frames of audio data."
+            print(self.frameRate, referenceFeatures.count)
+        } catch {
+            statusMessage = "❌ Error decoding JSON: \(error.localizedDescription)"
+        }
     }
     
     func loadPDFMetadata(url: URL) {
@@ -108,27 +118,6 @@ class PageTurnerViewModel: ObservableObject {
         
         // 4. Return the final accumulated cost (bottom-right corner)
         return dp[n][m]
-    }
-    
-    // 1. THE BRAIN: Load the JSON "buckets"
-    func loadJSON() {
-        guard let url = Bundle.main.url(forResource: "waterfall_features_full", withExtension: "json") else {
-            statusMessage = "❌ JSON file not found in Xcode!"
-            return
-        }
-        
-        do {
-            let data = try Data(contentsOf: url)
-            // Decode the list of lists [[0.1, 0.5...], [0.2, ...]]
-            let container = try JSONDecoder().decode(AudioFeaturesContainer.self, from: data)
-            referenceFeatures = container.features
-            self.measureMap = container.measure_map
-            self.beatMap = container.beat_map
-            self.frameRate = container.frame_rate
-            statusMessage = "✅ Loaded \(referenceFeatures.count) frames of audio data."
-        } catch {
-            statusMessage = "❌ Error decoding JSON: \(error.localizedDescription)"
-        }
     }
     
     // 2. THE EARS: Start the Microphone
@@ -323,8 +312,7 @@ class PageTurnerViewModel: ObservableObject {
         var bestCost = Double.greatestFiniteMagnitude
         
         let matchThreshold = 4.5
-        
-
+    
         // Iterate BACKWARDS from the furthest future frame
         for i in (startFrame..<endFrame).reversed() {
             let startRef = i - (historySize - 1)
